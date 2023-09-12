@@ -1,0 +1,290 @@
+;; Tanya Khan
+;; takhan
+
+;; Mansi Gera
+;; mgera
+
+; The Assignment
+; 
+; An important variant of the binary tree is the binary search tree (BST). In a binary search tree, the tree is organized such
+; that the key in any given node of the tree meets the conditions that all keys in the node's left subtree are less than the key
+; in the given node, and all the keys in the node's right subtree are greater than the key in the given node. This organization makes the
+; task of searching the tree more efficient (in terms of the number of comparisons needed to find a given key) than would be the case for a
+; regular binary tree.  This property (smaller values in the left subtree, greater values in the right subtree) is called the invariant of the
+; binary search tree.
+
+
+
+; 
+
+
+; THIS IS FOLLOWING GREGOR'S TEMPLATE-- CHECK WITH TA IF IT IS CORRECT
+
+;; A CourseNode is one of:
+;;  - false
+;;  - (make-coursenode Number String String ListOfStudent BST BST)
+
+;;  interp. false means no CourseNode, or empty CourseNode 
+;;    course-id       is  the ID of the course 
+;;    title           is  the title of the course
+;;    instructor      is  the name of the instructor 
+;;    students        is  the ListOfStudents enrolled in the course 
+;;    left and right  are the left and right subtress 
+
+;; INVARIANT: for a given node:
+;;     key is > all keys in its left  child
+;;     key is < all keys in its right child 
+;;     the same key never appears twice in the tree
+
+
+
+
+(define-struct student (name email))
+
+(define RAJ     (make-student "Raj"    "palat_palat_palat@gmail.com"   ))
+(define SIMRAN  (make-student "Simran" "jeelay_apni_zindagi@gmail.com" ))
+(define RAHUL   (make-student "Rahul"  "dance@gmail.com"               ))
+(define ANJALI  (make-student "Anjali" "no_music@gmail.com"            ))
+
+(define STUDENTS (list RAJ SIMRAN RAHUL ANJALI))
+(define STUDENTS1 (list RAJ SIMRAN RAHUL))
+(define STUDENTS2 (list SIMRAN RAHUL ANJALI))
+
+
+;  2.  (10 Points)  Provide an example of a binary search tree containing information for at least 5 courses. Make sure you construct your example so
+; that the courses are placed in the tree according to course number, satisfying the binary search tree invariant. 
+
+
+(define-struct coursenode (course-id title instructor students left right))
+
+(define PHILOSOPHYTREE (make-coursenode 2734 "Philosophy and Spirituality" "Jennifer Rudolph" STUDENTS  
+                                        (make-coursenode 2731 "Ethics" "John Sanbonmatsu" STUDENTS1 #true #true)
+                                        (make-coursenode 2719 "Philosophy in Science" "David I. Spanagel" STUDENTS2 
+                                                         (make-coursenode 2713 "Bioethics" "William San Martin" STUDENTS #false #false)
+                                                         (make-coursenode 3711 "Topics in Philosophy" "David Samson" STUDENTS1 #false #false))))
+
+;  3.  (15 Points)  Write the templates for functions operating on the structs specified by the data definitions in Problem 1.
+
+;; specified data definition in problem 1 is CourseNode
+;; insert template for fcn-bst since CourseNode is a self-referential BST
+
+; template:
+#;
+(define (fn-for-bst bst)
+  (cond [(false? bst) empty]
+        [(coursenode? bst)
+         (... (coursenode-course-id bst)
+              (coursenode-title bst)
+              (coursenode-instructor bst)
+              (coursenode-students bst)
+              (fn-for-bst (coursenode-left bst))
+              (fn-for-bst (coursenode-right bst)))]))
+
+; ;; student-fcn:  Student ->
+; ;;
+; (define (student-fcn   a-student)
+;   (...  (student-name  a-student)
+;         (student-email a-student)
+;         (los-fcn (student-WHATGOESHERE a-student))))
+; 
+; 
+; ;; los-fcn:  ListOfStudents ->
+; ;;
+; (define (los-fcn alos)
+;   (cond [(empty? alos) (OBVIOUS ANSWER)]
+;         [(cons?  alos)  (...  (student-fcn (first alos))
+;                               (los-fcn (rest alos)))]))
+
+;  4.  (30 Points)  Write a function any-taught-by? which consumes a binary search tree and the name of an instructor, and produces
+; true if any of the courses in the course database are taught by the given instructor. 
+
+
+;;any-taught-by: binary search tree String -> Boolean
+;;consumes a binary search tree and the name of an instructor and will produce true if the courses in the course database are taught by the given instructor
+
+
+(check-expect (any-taught-by? PHILOSOPHYTREE "") #false)
+(check-expect (any-taught-by? PHILOSOPHYTREE "Professor Ibraheim") #false)
+(check-expect (any-taught-by? PHILOSOPHYTREE "John Sanbonmatsu") #true)
+(check-expect (any-taught-by? PHILOSOPHYTREE "David Samson") #true)
+
+(define (any-taught-by?   a-course a-prof)
+  (cond [(boolean?    a-course) false] ;base case
+        [(coursenode? a-course)    (if (string=? a-prof (coursenode-instructor a-course))
+                                       #true
+                                       (or(any-taught-by?  (coursenode-left  a-course) a-prof)
+                                          (any-taught-by?  (coursenode-right a-course) a-prof)))]))
+
+
+;  5.  (30 Points)  Write a function drop-student that consumes a binary search tree, a course number, and the email address of a student, and produces a binary
+; search tree. The function drops (removes) the student with the given email address from the list of students enrolled in the given course.
+; (If there is no enrolled student with the given email address, the tree that is returned by the function is the same as the original. We will, perhaps, discuss better
+; ways to handle such errors later.) Your function should be written efficiently, taking advantage of the binary search tree invariant to minimize the number of comparisons
+; needed to find the course with the correct course number. You may assume that the given course number exists in the tree. 
+
+
+;; drop-student: BST Number String -> BST
+;; this function
+
+(check-expect (drop-student false 1789 "yummy@jb.com")false)
+
+(check-expect (drop-student PHILOSOPHYTREE 2713 "palat_palat_palat@gmail.com")
+              (make-coursenode 2734 "Philosophy and Spirituality" "Jennifer Rudolph" STUDENTS  
+                                        (make-coursenode 2731 "Ethics" "John Sanbonmatsu" STUDENTS1 #true #true)
+                                        (make-coursenode 2719 "Philosophy in Science" "David I. Spanagel" STUDENTS2 
+                                                         (make-coursenode 2713 "Bioethics" "William San Martin" (cons SIMRAN (cons RAHUL (cons ANJALI empty))) #false #false)
+                                                         (make-coursenode 3711 "Topics in Philosophy" "David Samson" STUDENTS1 #false #false))))
+
+              
+                              
+(define (drop-student bst course-num email)
+  (cond [(false? bst) #false]
+        [(coursenode? bst)
+         (cond [(< course-num (coursenode-course-id bst))
+                (make-coursenode (coursenode-course-id bst)
+                                 (coursenode-title bst)
+                                 (coursenode-instructor bst)
+                                 (coursenode-students bst)
+                                 (drop-student (coursenode-left bst) course-num email)
+                                 (coursenode-right bst))]
+               [(> course-num (coursenode-course-id bst))
+                (make-coursenode (coursenode-course-id bst)
+                                 (coursenode-title bst)
+                                 (coursenode-instructor bst)
+                                 (coursenode-students bst)
+                                 (coursenode-left bst)
+                                 (drop-student(coursenode-right bst) course-num email))]
+               [else
+                (make-coursenode (coursenode-course-id bst)
+                                 (coursenode-title bst)
+                                 (coursenode-instructor bst)
+                                 (remove-student (coursenode-students bst) email)
+                                 (coursenode-left bst)
+                                 (coursenode-right bst))])]))
+
+(check-expect (remove-student STUDENTS "mansi_is_c00l@wpi.edu") STUDENTS)
+(check-expect (remove-student STUDENTS "no_music@gmail.com") (list RAJ SIMRAN RAHUL))
+
+
+(check-expect (remove-student STUDENTS1 "palat_palat_palat@gmail.com") (list SIMRAN RAHUL))
+(check-expect (remove-student STUDENTS1 "jeelay_apni_zindagi@gmail.com") (list RAJ RAHUL))
+
+(check-expect (remove-student STUDENTS2 "dhrubbie_and_tanya_besties@hopefully.com") STUDENTS2)
+(check-expect (remove-student STUDENTS2 "dance@gmail.com") (list SIMRAN ANJALI))
+
+
+
+;; remove-student: alos email -> alos
+;; the function takes the list of students and checks if the given email is in the list
+;; if the email is in the list, the function produce a new list without the student
+;; whose email corresponds to the one that is entered (via the parameter) 
+              
+(define (remove-student alos email)
+  (cond [(empty? alos) empty]
+        [(cons? alos) (if (string=? email (student-email (first alos)))
+                          (remove-student (rest alos) email)
+                          (cons (first alos) (remove-student (rest alos)email)))]))
+                       
+                                 
+               
+;;
+; (define (los-fcn alos)
+;   (cond [(empty? alos) (OBVIOUS ANSWER)]
+;         [(cons?  alos)  (...  (student-fcn (first alos))
+;                               (los-fcn (rest alos)))]))
+
+
+;
+;         
+;         
+; (... (coursenode-course-id bst)
+;                     (coursenode-title bst)
+;                     (coursenode-instructor bst)
+;                     (coursenode-students bst)
+;                     (fn-for-bst (coursenode-left bst))
+;                     (fn-for-bst (coursenode-right bst)))]))
+
+
+
+;; Then draw out what it is the function will be doing 
+;; Then do check expects
+;; Then copy the template and begin filling in the appropraite field names, etc.
+;; Finally, run and make sure that the check-expects adequatley test the function written 
+
+
+;  6.  (25 Points)  Write a function list-titles-in-order-by-coursenum. The function consumes a binary search tree and produces a list of the titles of the courses,
+; sorted in order by ascending course number. (Hint: you don't have to write a sorting algorithm. Use what you know about the order of items in a binary search tree to help you.
+; You will need to use the built-in function append for this problem.)
+
+
+;;list-titles-in-order-by-coursenum: binary search tree -> list
+;;consumes a binary search tree and produces a list of the titles of the courses by ascending course number
+
+;[(boolean a-course) empty]
+
+;
+
+
+; (... (coursenode-course-id bst)
+;                     (coursenode-title bst)
+;                     (coursenode-instructor bst)
+;                     (coursenode-students bst)
+;                     (fn-for-bst (coursenode-left bst))
+;                     (fn-for-bst (coursenode-right bst)))]))
+
+
+(check-expect (list-titles-in-order-by-coursenum #false) empty) 
+(check-expect (list-titles-in-order-by-coursenum PHILOSOPHYTREE) (cons "Ethics" (cons "Philosophy and Spirituality"  (cons "Bioethics" (cons "Philosophy in Science" (cons "Topics in Philosophy" empty))))))
+
+;lists MATHTREE BST course titles in order 
+;(check-expect (list-titles-in-order-by-coursenum COURSE1) (cons "CS1101" empty)) ;returns one item list for singular coursenode BST
+
+(define (list-titles-in-order-by-coursenum a-coursenode)
+  (cond
+    [(boolean? a-coursenode) empty]
+    [(coursenode? a-coursenode) (append (list-titles-in-order-by-coursenum (coursenode-left a-coursenode))
+                                  (list (coursenode-title a-coursenode))
+                                  (list-titles-in-order-by-coursenum (coursenode-right a-coursenode)))]))
+                                                                     
+
+
+
+ 
+
+
+
+
+
+;  7.  (25 Points)  Write a function add-course. The function consumes a binary search tree, a course number, a course title, and the name of the instructor, and creates a
+; binary search tree the same as the original except that a new course with the given information has been added to the tree. The course is created with an empty enrollment list.
+; Make sure that the tree that is produced is a binary search tree. You may assume that the course number does not already exist in the given tree.
+; (Hint: new items are always added at the "leaf" end of the tree. Items are never inserted into the middle layers of a binary search tree.) 
+
+
+ (check-expect (add-course PHILOSOPHYTREE 5438 "CS" "Mark") (make-coursenode 2734 "Philosophy and Spirituality" "Jennifer Rudolph" STUDENTS  
+                                        (make-coursenode 2731 "Ethics" "John Sanbonmatsu" STUDENTS1 #true #true)
+                                        (make-coursenode 2719 "Philosophy in Science" "David I. Spanagel" STUDENTS2 
+                                                         (make-coursenode 2713 "Bioethics" "William San Martin" STUDENTS #false #false)
+                                                         (make-coursenode 3711 "Topics in Philosophy" "David Samson" STUDENTS1 #false #true)
+                                                         (make-coursenode 5438 "CS" "Mark" STUDENTS1 #false #false))))
+
+(define (add-course a-tree a-coursenum a-title an-instructor)
+  (cond [(boolean? a-tree) (make-coursenode a-coursenum a-title an-instructor empty #false #false)]
+       
+        [(coursenode? a-tree) (if (< a-coursenum (coursenode-course-id a-tree))
+                                  (make-coursenode (coursenode-course-id a-tree)
+                                                   (coursenode-title a-tree)
+                                                   (coursenode-instructor a-tree)
+                                                   (coursenode-students a-tree) 
+                                                   (add-course (coursenode-left a-tree) a-coursenum a-title an-instructor)
+                                                   (coursenode-right a-tree))
+                           
+                                  (make-coursenode (coursenode-course-id a-tree)
+                                                   (coursenode-title a-tree)
+                                                   (coursenode-instructor a-tree)
+                                                   (coursenode-students a-tree) 
+                                                   (coursenode-left a-tree) 
+                                                   (add-course (coursenode-right a-tree) a-coursenum a-title an-instructor)))]))
+
+
+
